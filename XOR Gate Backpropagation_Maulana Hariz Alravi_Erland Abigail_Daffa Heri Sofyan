@@ -1,0 +1,83 @@
+Maulana Hariz Alravi 21060120130136
+Erland Abigail       21060120140180
+Daffa Heri Sofyan    21060120140107
+
+import numpy as np
+
+# Definisikan fungsi sigmoid
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+# Definisikan model XOR gate
+class XOR:
+    def __init__(self):
+        self.W1 = np.random.randn(2, 2)
+        self.b1 = np.zeros((1, 2))
+        self.W2 = np.random.randn(2, 1)
+        self.b2 = np.zeros((1, 1))
+
+    def forward(self, x):
+        self.z1 = np.dot(x, self.W1) + self.b1
+        self.a1 = sigmoid(self.z1)
+        self.z2 = np.dot(self.a1, self.W2) + self.b2
+        self.a2 = sigmoid(self.z2)
+        return self.a2
+
+    def backward(self, x, y, learning_rate):
+        m = x.shape[0]
+
+        # Hitung gradien
+        self.dz2 = self.a2 - y
+        self.dW2 = np.dot(self.a1.T, self.dz2) / m
+        self.db2 = np.sum(self.dz2, axis=0, keepdims=True) / m
+        self.da1 = np.dot(self.dz2, self.W2.T)
+        self.dz1 = self.da1 * (self.a1 * (1 - self.a1))
+        self.dW1 = np.dot(x.T, self.dz1) / m
+        self.db1 = np.sum(self.dz1, axis=0, keepdims=True) / m
+
+        # Update bobot dan bias
+        self.W2 -= learning_rate * self.dW2
+        self.b2 -= learning_rate * self.db2
+        self.W1 -= learning_rate * self.dW1
+        self.b1 -= learning_rate * self.db1
+
+# Latih model XOR gate menggunakan mini-batch gradient descent
+def train_xor():
+    model = XOR()
+    epochs = 10000
+    batch_size = 2
+    learning_rate = 0.1
+
+    # Data pelatihan XOR gate
+    inputs = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+    targets = np.array([[0], [1], [1], [0]])
+    num_batches = inputs.shape[0] // batch_size
+
+    for epoch in range(epochs):
+        for batch in range(num_batches):
+            start_idx = batch * batch_size
+            end_idx = (batch + 1) * batch_size
+            batch_inputs = inputs[start_idx:end_idx]
+            batch_targets = targets[start_idx:end_idx]
+            model.forward(batch_inputs)
+            model.backward(batch_inputs, batch_targets, learning_rate)
+
+        # Cetak loss setiap 1000 iterasi
+        if (epoch+1) % 1000 == 0:
+            loss = np.mean((model.forward(inputs) - targets) ** 2)
+            print(f"Epoch: {epoch+1}, Loss: {loss}")
+
+    return model
+
+# Uji model XOR gate
+def test_xor(model):
+    test_inputs = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+    predicted = model.forward(test_inputs)
+    predicted = predicted > 0.5
+    print("Predicted outputs:")
+    for i in range(len(predicted)):
+        print(f"{test_inputs[i]}: {int(predicted[i][0])}")
+
+# Panggil fungsi pelatihan dan pengujian
+xor_model = train_xor()
+test_xor(xor_model)
